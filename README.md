@@ -1,9 +1,11 @@
-# AI NEWS NAVIGATION
+# ATwo
 
 [![GitHub stars](https://img.shields.io/github/stars/Lbiebest/ATwo?style=flat-square)](https://github.com/Lbiebest/ATwo/stargazers)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-一个基于 Vue 3 开发的 AI 公益站点导航系统，采用独特的 **Newsprint (报纸风格)** UI 设计。
+一个基于 Vue 3 开发的 AI 公益站点导航 system，采用独特的 **Newsprint (报纸风格)** UI 设计。
+
+![Preview](assents/www.atwo.shop.png)
 
 ![Production](https://img.shields.io/badge/Deployment-Vercel-black?style=for-the-badge&logo=vercel)
 ![Vue](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js)
@@ -41,7 +43,7 @@
 1. **克隆仓库**:
    ```bash
    git clone <repository-url>
-   cd AINavigationSite
+   cd ATwo
    ```
 
 2. **安装依赖**:

@@ -1,5 +1,8 @@
 # AI NEWS NAVIGATION
 
+[![GitHub stars](https://img.shields.io/github/stars/Lbiebest/ATwo?style=flat-square)](https://github.com/Lbiebest/ATwo/stargazers)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 一个基于 Vue 3 开发的 AI 公益站点导航系统，采用独特的 **Newsprint (报纸风格)** UI 设计。
 
 ![Production](https://img.shields.io/badge/Deployment-Vercel-black?style=for-the-badge&logo=vercel)

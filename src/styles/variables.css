@@ -1,0 +1,30 @@
+:root {
+    /* Newsprint Style Colors */
+    --bg-primary: #F9F9F7;
+    /* Newsprint Off-White */
+    --bg-secondary: #F5F5F5;
+    /* Hover backgrounds */
+    --bg-tertiary: #E5E5E0;
+    /* Divider Grey */
+    --text-primary: #111111;
+    /* Ink Black */
+    --text-secondary: #525252;
+    /* Body text variations */
+    --text-muted: #737373;
+    /* Metadata, captions */
+    --accent-red: #CC0000;
+    /* Editorial Red */
+    --border-color: #111111;
+    /* Ink Black */
+
+    /* Functional Colors */
+    --color-success: #111111;
+    /* Using black for success in newsprint */
+    --color-warning: #CC0000;
+    /* Using red for warning */
+    --color-danger: #CC0000;
+    /* Using red for danger */
+
+    /* Shadows */
+    --hard-shadow: 4px 4px 0px 0px #111111;
+}

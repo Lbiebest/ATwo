@@ -2,35 +2,87 @@
     <div class="script-container newsprint-texture">
         <div class="editor-header">
             <span class="editor-label font-mono">AUTOMATION_SCRIPTS_V2.0</span>
-            <button class="btn btn-primary btn-sm" @click="openNewScript">
-                <iconify-icon icon="mdi:plus" width="16"></iconify-icon>
-                新建脚本
-            </button>
+            <div class="editor-header-actions">
+                <button v-if="scripts.length > 0" class="btn btn-secondary btn-sm" @click="toggleBatchMode">
+                    <iconify-icon :icon="isBatchMode ? 'mdi:check-circle' : 'mdi:checkbox-multiple-marked-outline'"
+                        width="16"></iconify-icon>
+                    {{ isBatchMode ? '退出批量' : '批量操作' }}
+                </button>
+                <button v-if="isBatchMode && selectedScripts.length > 0" class="btn btn-primary btn-sm"
+                    @click="handleBatchRun" :disabled="isBatchRunning">
+                    <iconify-icon :icon="isBatchRunning ? 'mdi:loading' : 'mdi:play-circle'" width="16"
+                        :class="{ 'spin': isBatchRunning }"></iconify-icon>
+                    运行选中 ({{ selectedScripts.length }})
+                </button>
+                <button v-if="isBatchMode && selectedScripts.length > 0" class="btn btn-delete btn-sm"
+                    @click="handleBatchDelete" :disabled="isBatchRunning">
+                    <iconify-icon icon="mdi:delete" width="16"></iconify-icon>
+                    删除选中 ({{ selectedScripts.length }})
+                </button>
+                <button v-if="!isBatchMode" class="btn btn-primary btn-sm" @click="openNewScript">
+                    <iconify-icon icon="mdi:plus" width="16"></iconify-icon>
+                    新建脚本
+                </button>
+            </div>
         </div>
 
         <!-- Script List -->
-        <div v-if="!isEditing" class="script-list">
-            <div v-for="script in scripts" :key="script.id" class="script-item">
-                <div class="script-info">
-                    <h3 class="script-name font-serif">{{ script.name }}</h3>
-                    <div class="script-meta font-mono">
-                        最后运行: {{ script.lastRun ? new Date(script.lastRun).toLocaleString() : '从未' }}
-                    </div>
-                </div>
-                <div class="script-item-actions">
-                    <button class="btn btn-secondary" @click="handleRun(script.id)" :disabled="isRunning === script.id">
-                        <iconify-icon :icon="isRunning === script.id ? 'mdi:loading' : 'mdi:play'" width="16" :class="{'spin': isRunning === script.id}"></iconify-icon>
-                        运行
+        <div v-if="!isEditing" class="script-list-container">
+            <div class="script-list-header">
+                <div class="layout-toggle">
+                    <button class="btn btn-icon btn-sm" :class="{ 'btn-primary': scriptLayout === 'list' }"
+                        @click="scriptLayout = 'list'" title="列表布局">
+                        <iconify-icon icon="mdi:view-list" width="16"></iconify-icon>
                     </button>
-                    <button class="btn btn-secondary" @click="handleEdit(script)">
-                        <iconify-icon icon="mdi:pencil" width="16"></iconify-icon>
-                        编辑
-                    </button>
-                    <button class="btn btn-delete" @click="handleDelete(script.id)">
-                        <iconify-icon icon="mdi:delete" width="16"></iconify-icon>
+                    <button class="btn btn-icon btn-sm" :class="{ 'btn-primary': scriptLayout === 'grid' }"
+                        @click="scriptLayout = 'grid'" title="卡片布局">
+                        <iconify-icon icon="mdi:view-grid" width="16"></iconify-icon>
                     </button>
                 </div>
             </div>
+
+            <draggable v-model="scripts" item-key="id" :class="['script-list', scriptLayout + '-view']"
+                handle=".drag-handle" :disabled="isBatchMode">
+                <template #item="{ element: script }">
+                    <div class="script-item"
+                        :class="{ 'is-selected': selectedScripts.includes(script.id), 'batch-mode': isBatchMode }"
+                        @click="isBatchMode ? toggleScriptSelection(script.id) : null">
+                        <div class="script-main">
+                            <!-- Drag Handle -->
+                            <div v-if="!isBatchMode" class="drag-handle">
+                                <iconify-icon icon="mdi:drag-variant" width="16"></iconify-icon>
+                            </div>
+                            <div v-if="isBatchMode" class="checkbox"
+                                :class="{ 'checked': selectedScripts.includes(script.id) }">
+                                <iconify-icon v-if="selectedScripts.includes(script.id)" icon="mdi:check"
+                                    width="16"></iconify-icon>
+                            </div>
+                            <div class="script-info">
+                                <h3 class="script-name font-serif">{{ script.name }}</h3>
+                                <div class="script-meta font-mono">
+                                    最后运行: {{ script.lastRun ? new Date(script.lastRun).toLocaleString() : '从未' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="script-item-actions" :class="{ 'disabled': isBatchMode }">
+                            <button class="btn btn-secondary" @click.stop="handleRun(script.id)"
+                                :disabled="isRunning === script.id">
+                                <iconify-icon :icon="isRunning === script.id ? 'mdi:loading' : 'mdi:play'" width="16"
+                                    :class="{ 'spin': isRunning === script.id }"></iconify-icon>
+                                运行
+                            </button>
+                            <button class="btn btn-secondary" @click.stop="handleEdit(script)">
+                                <iconify-icon icon="mdi:pencil" width="16"></iconify-icon>
+                                编辑
+                            </button>
+                            <button class="btn btn-delete" @click.stop="handleDelete(script.id)">
+                                <iconify-icon icon="mdi:delete" width="16"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </draggable>
+
             <div v-if="scripts.length === 0" class="empty-scripts">
                 <iconify-icon icon="mdi:script-text-outline" width="48"></iconify-icon>
                 <p>暂无自动化脚本，点击“新建脚本”开始。</p>
@@ -40,11 +92,7 @@
         <!-- Editor View -->
         <div v-else class="editor-view">
             <div class="editor-controls">
-                <input 
-                    v-model="currentScript.name" 
-                    class="script-name-input font-serif" 
-                    placeholder="脚本名称..."
-                />
+                <input v-model="currentScript.name" class="script-name-input font-serif" placeholder="脚本名称..." />
                 <div class="editor-view-actions">
                     <button class="btn btn-primary" @click="handleSave">
                         <iconify-icon icon="mdi:content-save" width="16"></iconify-icon>
@@ -55,11 +103,8 @@
                     </button>
                 </div>
             </div>
-            <textarea 
-                v-model="currentScript.content"
-                class="script-editor" 
-                placeholder="// 在此输入您的 JavaScript 代码..."
-            ></textarea>
+            <textarea v-model="currentScript.content" class="script-editor"
+                placeholder="// 在此输入您的 JavaScript 代码..."></textarea>
         </div>
 
         <div class="script-tip font-body">
@@ -69,17 +114,77 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
+import draggable from 'vuedraggable'
 import { useScripts } from '../composables/useScripts.js'
 import { useNotification } from '../composables/useNotification.js'
 import { useConfirm } from '../composables/useConfirm.js'
 
-const { scripts, addScript, updateScript, deleteScript, runScript } = useScripts()
+const { scripts, addScript, updateScript, deleteScript, deleteMultipleScripts, runScript } = useScripts()
 const { show: notify } = useNotification()
 const { confirm: customConfirm } = useConfirm()
 
+const scriptLayout = ref(localStorage.getItem('script_layout') || 'list')
+watch(scriptLayout, (val) => localStorage.setItem('script_layout', val))
+
 const isEditing = ref(false)
 const isRunning = ref(null)
+const isBatchMode = ref(false)
+const isBatchRunning = ref(false)
+const selectedScripts = ref([])
+
+function toggleBatchMode() {
+    if (isBatchRunning.value) return
+    isBatchMode.value = !isBatchMode.value
+    if (!isBatchMode.value) {
+        selectedScripts.value = []
+    }
+}
+
+function toggleScriptSelection(id) {
+    if (isBatchRunning.value) return
+    const index = selectedScripts.value.indexOf(id)
+    if (index === -1) {
+        selectedScripts.value.push(id)
+    } else {
+        selectedScripts.value.splice(index, 1)
+    }
+}
+
+async function handleBatchDelete() {
+    if (await customConfirm(`确定要删除选中的 ${selectedScripts.value.length} 个脚本吗？`)) {
+        deleteMultipleScripts(selectedScripts.value)
+        selectedScripts.value = []
+        isBatchMode.value = false
+        notify('批量删除成功！')
+    }
+}
+
+async function handleBatchRun() {
+    if (selectedScripts.value.length === 0) return
+
+    isBatchRunning.value = true
+    notify(`正在批量运行 ${selectedScripts.value.length} 个脚本...`)
+
+    try {
+        const results = await Promise.all(selectedScripts.value.map(id => runScript(id)))
+        const successCount = results.filter(r => r.success).length
+        const failCount = results.length - successCount
+
+        if (failCount === 0) {
+            notify(`批量运行成功！共 ${successCount} 个脚本。`, 'success')
+        } else {
+            notify(`批量运行完成：${successCount} 成功，${failCount} 失败。`, successCount > 0 ? 'warning' : 'error')
+        }
+    } catch (error) {
+        notify('批量运行过程中出现错误: ' + error.message, 'error')
+    } finally {
+        isBatchRunning.value = false
+        selectedScripts.value = []
+        isBatchMode.value = false
+    }
+}
+
 const currentScript = reactive({
     id: null,
     name: '',
@@ -134,10 +239,10 @@ async function handleRun(id) {
     isRunning.value = id
     const result = await runScript(id)
     isRunning.value = null
-    
+
     if (result.success) {
-        const message = result.data !== undefined 
-            ? `脚本运行成功！\n结果: ${typeof result.data === 'object' ? JSON.stringify(result.data) : result.data}` 
+        const message = result.data !== undefined
+            ? `脚本运行成功！\n结果: ${typeof result.data === 'object' ? JSON.stringify(result.data) : result.data}`
             : '脚本运行成功！'
         notify(message, 'success')
     } else {
@@ -162,10 +267,33 @@ async function handleRun(id) {
     padding-bottom: 0.5rem;
 }
 
+.editor-header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 .editor-label {
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-muted);
+}
+
+.script-list-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.layout-toggle {
+    display: flex;
+    gap: 0.25rem;
+    border: 1px solid var(--border-color);
+    padding: 2px;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    min-width: 36px;
 }
 
 .script-list {
@@ -175,7 +303,38 @@ async function handleRun(id) {
     margin-bottom: 2rem;
 }
 
+/* Grid View Styles for Scripts */
+.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.grid-view .script-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+
+.grid-view .script-main {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.grid-view .script-item-actions {
+    justify-content: space-between;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.grid-view .script-item-actions .btn {
+    flex: 1;
+}
+
 .script-item {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -183,6 +342,50 @@ async function handleRun(id) {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     transition: all 0.2s ease;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-right: 0.5rem;
+}
+
+.script-item:hover .drag-handle {
+    opacity: 1;
+}
+
+.script-item.batch-mode {
+    cursor: pointer;
+}
+
+.script-item.is-selected {
+    background: var(--bg-primary);
+    border-color: var(--text-primary);
+}
+
+.script-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    transition: all 0.2s;
+}
+
+.checkbox.checked {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--bg-primary);
 }
 
 .script-item:hover {
@@ -206,6 +409,11 @@ async function handleRun(id) {
     display: flex;
     gap: 0.5rem;
     align-items: center;
+}
+
+.script-item-actions.disabled {
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .empty-scripts {
@@ -279,8 +487,13 @@ async function handleRun(id) {
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 768px) {
@@ -289,16 +502,15 @@ async function handleRun(id) {
         align-items: flex-start;
         gap: 1rem;
     }
-    
+
     .script-item-actions {
         width: 100%;
         justify-content: flex-end;
     }
-    
+
     .editor-controls {
         flex-direction: column;
         align-items: stretch;
     }
 }
 </style>
-

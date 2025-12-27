@@ -1,5 +1,21 @@
 <template>
-    <div class="card hard-shadow-hover">
+    <div 
+        class="card hard-shadow-hover" 
+        :class="{ 'is-selected': isSelected, 'batch-mode': isBatchMode }"
+        @click="isBatchMode ? $emit('toggle-select', siteKey) : null"
+    >
+        <!-- Drag Handle -->
+        <div v-if="!isBatchMode" class="drag-handle">
+            <iconify-icon icon="mdi:drag-variant" width="16"></iconify-icon>
+        </div>
+
+        <!-- Selection Checkbox -->
+        <div v-if="isBatchMode" class="selection-overlay">
+            <div class="checkbox" :class="{ 'checked': isSelected }">
+                <iconify-icon v-if="isSelected" icon="mdi:check" width="16"></iconify-icon>
+            </div>
+        </div>
+
         <div class="card-header">
             <SiteIcon 
                 :url="site['main_site'].url" 
@@ -14,8 +30,8 @@
             <span class="tag">主站</span>
             <span v-if="site['bonus_site_exists']" class="tag tag-welfare">福利站</span>
         </div>
-        <div class="card-actions">
-            <a :href="site['main_site'].url" target="_blank" class="btn btn-primary">
+        <div class="card-actions" :class="{ 'disabled': isBatchMode }">
+            <a :href="site['main_site'].url" target="_blank" class="btn btn-primary" @click.stop>
                 <iconify-icon icon="mdi:open-in-new" width="14"></iconify-icon>
                 访问
             </a>
@@ -24,6 +40,7 @@
                 :href="site['bonus_site'].url" 
                 target="_blank" 
                 class="btn btn-secondary welfare-btn"
+                @click.stop
             >
                 <iconify-icon icon="mdi:gift" width="14"></iconify-icon>
                 {{ site['bonus_site'].name || '福利站' }}
@@ -41,6 +58,7 @@
                 :href="site.supportUrl" 
                 target="_blank" 
                 class="btn btn-secondary support-btn"
+                @click.stop
             >
                 <iconify-icon icon="mdi:heart" width="14"></iconify-icon>
                 支持
@@ -70,19 +88,80 @@ const props = defineProps({
     siteKey: {
         type: String,
         required: true
+    },
+    isBatchMode: {
+        type: Boolean,
+        default: false
+    },
+    isSelected: {
+        type: Boolean,
+        default: false
     }
 })
 
-defineEmits(['delete', 'edit'])
+defineEmits(['delete', 'edit', 'toggle-select'])
 </script>
 
 <style scoped>
 .card {
+    position: relative;
     background: var(--bg-primary);
     padding: 1.5rem;
     border-right: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     transition: all 0.2s ease-out;
+}
+
+.batch-mode {
+    cursor: pointer;
+}
+
+.is-selected {
+    background: var(--bg-secondary);
+    border-color: var(--text-primary);
+}
+
+.drag-handle {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    cursor: grab;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.card:hover .drag-handle {
+    opacity: 1;
+}
+
+.selection-overlay {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    transition: all 0.2s;
+}
+
+.checkbox.checked {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--bg-primary);
+}
+
+.card-actions.disabled {
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .card-header {
